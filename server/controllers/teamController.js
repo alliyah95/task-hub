@@ -31,46 +31,6 @@ const createTeam = asyncHandler(async (req, res) => {
     }
 });
 
-const addMember = asyncHandler(async (req, res) => {
-    const { teamId, memberId } = req.body;
-
-    if (!teamId || !memberId) {
-        res.status(400);
-        throw new Error("Team and member IDs are required");
-    }
-
-    const team = await Team.findById(teamId);
-    if (!team) {
-        res.status(404);
-        throw new Error("Team not found");
-    }
-
-    const isMemberAlreadyInTeam = team.members.includes(memberId);
-    if (isMemberAlreadyInTeam) {
-        res.status(400);
-        throw new Error("Member is already in the team");
-    }
-
-    const updatedTeam = await Team.findByIdAndUpdate(
-        teamId,
-        {
-            $push: { members: memberId },
-        },
-        {
-            new: true,
-        }
-    )
-        .populate("members", "-password -createdAt -updatedAt")
-        .populate("admin", "-password -createdAt -updatedAt");
-
-    if (!updatedTeam) {
-        res.status(400);
-        throw new Error("Team not found");
-    } else {
-        res.status(200).json({ team: updatedTeam });
-    }
-});
-
 const renameTeam = asyncHandler(async (req, res) => {
     const { teamId, name } = req.body;
 
@@ -148,9 +108,95 @@ const deleteTeam = asyncHandler(async (req, res) => {
     }
 });
 
+const addMember = asyncHandler(async (req, res) => {
+    const { teamId, memberId } = req.body;
+
+    if (!teamId || !memberId) {
+        res.status(400);
+        throw new Error("Team and member IDs are required");
+    }
+
+    const team = await Team.findById(teamId);
+    if (!team) {
+        res.status(404);
+        throw new Error("Team not found");
+    }
+
+    const isMemberAlreadyInTeam = team.members.includes(memberId);
+    if (isMemberAlreadyInTeam) {
+        res.status(400);
+        throw new Error("Member is already in the team");
+    }
+
+    const updatedTeam = await Team.findByIdAndUpdate(
+        teamId,
+        {
+            $push: { members: memberId },
+        },
+        {
+            new: true,
+        }
+    )
+        .populate("members", "-password -createdAt -updatedAt")
+        .populate("admin", "-password -createdAt -updatedAt");
+
+    if (!updatedTeam) {
+        res.status(400);
+        throw new Error("Team not found");
+    } else {
+        res.status(200).json({ team: updatedTeam });
+    }
+});
+
+const removeMember = asyncHandler(async (req, res) => {
+    const { teamId, memberId } = req.body;
+
+    if (!teamId || !memberId) {
+        res.status(400);
+        throw new Error("Team and member IDs are required");
+    }
+
+    if (memberId === req.user._id.toString()) {
+        res.status(400);
+        throw new Error("You cannot remove yourself");
+    }
+
+    const team = await Team.findById(teamId);
+    if (!team) {
+        res.status(404);
+        throw new Error("Team not found");
+    }
+
+    const isMemberOfTeam = team.members.includes(memberId);
+    if (!isMemberOfTeam) {
+        res.status(400);
+        throw new Error("User is not a member of the team");
+    }
+
+    const updatedTeam = await Team.findByIdAndUpdate(
+        teamId,
+        {
+            $pull: { members: memberId },
+        },
+        {
+            new: true,
+        }
+    )
+        .populate("members", "-password -createdAt -updatedAt")
+        .populate("admin", "-password -createdAt -updatedAt");
+
+    if (!updatedTeam) {
+        res.status(400);
+        throw new Error("Team not found");
+    } else {
+        res.status(200).json({ team: updatedTeam });
+    }
+});
+
 module.exports = {
     createTeam,
     addMember,
+    removeMember,
     renameTeam,
     fetchTeam,
     fetchAllTeams,
