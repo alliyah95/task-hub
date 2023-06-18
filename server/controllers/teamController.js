@@ -71,4 +71,27 @@ const addMember = asyncHandler(async (req, res) => {
     }
 });
 
-module.exports = { createTeam, addMember };
+const renameTeam = asyncHandler(async (req, res) => {
+    const { teamId, name } = req.body;
+
+    if (!name) {
+        res.status(400);
+        throw new Error("Team name cannot be empty");
+    }
+    const updatedTeam = await Team.findByIdAndUpdate(
+        teamId,
+        { name },
+        { new: true }
+    )
+        .populate("members", "-password -createdAt -updatedAt")
+        .populate("admin", "-password -createdAt -updatedAt");
+
+    if (!updatedTeam) {
+        res.status(404);
+        throw new Error("Team not found");
+    } else {
+        res.json({ team: updatedTeam });
+    }
+});
+
+module.exports = { createTeam, addMember, renameTeam };
