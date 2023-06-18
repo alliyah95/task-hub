@@ -31,4 +31,5 @@ const createTeam = asyncHandler(async (req, res) => {
     }
 });
 
+const addMember = asyncHandler(async (req, res) => {});
 module.exports = { createTeam };
