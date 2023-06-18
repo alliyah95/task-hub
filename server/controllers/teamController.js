@@ -125,10 +125,34 @@ const fetchAllTeams = asyncHandler(async (req, res) => {
     res.status(200).json({ teams });
 });
 
+const deleteTeam = asyncHandler(async (req, res) => {
+    const { teamId } = req.body;
+
+    if (!teamId) {
+        res.status(404);
+        throw new Error("Team ID is empty");
+    }
+
+    try {
+        const deletedTeam = await Team.findByIdAndDelete(teamId);
+
+        if (!deletedTeam) {
+            res.status(404);
+            throw new Error("Team not found");
+        }
+
+        res.status(200).json({ message: "Team successfully deleted" });
+    } catch (error) {
+        res.status(500);
+        throw new Error("Failed to delete team");
+    }
+});
+
 module.exports = {
     createTeam,
     addMember,
     renameTeam,
     fetchTeam,
     fetchAllTeams,
+    deleteTeam,
 };
