@@ -90,8 +90,45 @@ const renameTeam = asyncHandler(async (req, res) => {
         res.status(404);
         throw new Error("Team not found");
     } else {
-        res.json({ team: updatedTeam });
+        res.status(200).json({ team: updatedTeam });
     }
 });
 
-module.exports = { createTeam, addMember, renameTeam };
+const fetchTeam = asyncHandler(async (req, res) => {
+    const { teamId } = req.body;
+
+    if (!teamId) {
+        res.status(400);
+        throw new Error("Team ID is empty");
+    }
+
+    const team = await Team.findById(teamId)
+        .populate("members", "-password -createdAt -updatedAt")
+        .populate("admin", "-password -createdAt -updatedAt");
+
+    if (!team) {
+        res.status(404);
+        throw new Error("Team not found");
+    } else {
+        res.status(200).json({ team });
+    }
+});
+
+const fetchAllTeams = asyncHandler(async (req, res) => {
+    const teams = await Team.find({
+        members: { $elemMatch: { $eq: req.user._id } },
+    })
+        .populate("members", "-password -createdAt -updatedAt")
+        .populate("admin", "-password -createdAt -updatedAt")
+        .sort({ name: 1 });
+
+    res.status(200).json({ teams });
+});
+
+module.exports = {
+    createTeam,
+    addMember,
+    renameTeam,
+    fetchTeam,
+    fetchAllTeams,
+};
