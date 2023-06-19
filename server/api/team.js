@@ -10,6 +10,8 @@ const {
     deleteTeam,
     leaveTeam,
     createAnnouncement,
+    fetchAnnouncement,
+    fetchAllAnnouncements,
 } = require("../controllers/teamController");
 const { protect, isMember, isAdmin } = require("../utils/auth");
 
@@ -22,6 +24,13 @@ router.get("/fetch-all", protect, fetchAllTeams);
 router.delete("/delete", protect, isMember, isAdmin, deleteTeam);
 router.put("/leave", protect, isMember, leaveTeam);
 
-router.post("/announce", protect, isAdmin, createAnnouncement);
+router.post("/announce", protect, isMember, isAdmin, createAnnouncement);
+router.get("/fetch-announcement", protect, isMember, fetchAnnouncement);
+router.get(
+    "/fetch-all-announcements",
+    protect,
+    isMember,
+    fetchAllAnnouncements
+);
 
 module.exports = router;

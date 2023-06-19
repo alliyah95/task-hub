@@ -1,8 +1,15 @@
 const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
+const { generateShortId } = require("../utils/team");
 
 const announcementSchema = new Schema(
     {
+        shortId: {
+            type: String,
+            default: generateShortId,
+            required: [true, "Cannot generate a short ID"],
+            unique: true,
+        },
         author: {
             type: Schema.Types.ObjectId,
             ref: "User",
@@ -15,7 +22,6 @@ const announcementSchema = new Schema(
         },
         title: {
             type: String,
-            default: "No title",
             required: true,
             trim: true,
         },
