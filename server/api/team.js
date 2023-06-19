@@ -12,6 +12,7 @@ const {
     createAnnouncement,
     fetchAnnouncement,
     fetchAllAnnouncements,
+    editAnnouncement,
 } = require("../controllers/teamController");
 const { protect, isMember, isAdmin } = require("../utils/auth");
 
@@ -32,5 +33,5 @@ router.get(
     isMember,
     fetchAllAnnouncements
 );
-
+router.put("/edit-announcement", protect, isMember, isAdmin, editAnnouncement);
 module.exports = router;

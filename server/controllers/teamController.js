@@ -309,6 +309,28 @@ const fetchAllAnnouncements = asyncHandler(async (req, res) => {
     res.status(200).json({ announcements });
 });
 
+const editAnnouncement = asyncHandler(async (req, res) => {
+    const { announcementId, title, content } = req.body;
+
+    if (!announcementId) {
+        res.status(400);
+        throw new Error("Announcement ID is empty");
+    }
+
+    const editedAnnouncement = await Announcement.findByIdAndUpdate(
+        announcementId,
+        { title, content },
+        { new: true }
+    ).populate("author", "-password -createdAt -updatedAt");
+
+    if (!editAnnouncement) {
+        res.status(404);
+        throw new Error("Announcement not found");
+    }
+
+    res.status(200).json({ announcement: editedAnnouncement });
+});
+
 module.exports = {
     createTeam,
     addMember,
@@ -321,4 +343,5 @@ module.exports = {
     createAnnouncement,
     fetchAnnouncement,
     fetchAllAnnouncements,
+    editAnnouncement,
 };
