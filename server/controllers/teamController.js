@@ -331,6 +331,31 @@ const editAnnouncement = asyncHandler(async (req, res) => {
     res.status(200).json({ announcement: editedAnnouncement });
 });
 
+const deleteAnnouncement = asyncHandler(async (req, res) => {
+    const { announcementId } = req.body;
+
+    if (!announcementId) {
+        res.status(400);
+        throw new Error("Announcement ID is empty");
+    }
+
+    try {
+        const deletedAnnouncement = await Announcement.findByIdAndDelete(
+            announcementId
+        );
+
+        if (!deletedAnnouncement) {
+            res.status(404);
+            throw new Error("Announcement not found");
+        }
+
+        res.status(200).json({ message: "Announcement successfully deleted" });
+    } catch (error) {
+        res.status(500);
+        throw new Error("Failed to delete announcement");
+    }
+});
+
 module.exports = {
     createTeam,
     addMember,
@@ -344,4 +369,5 @@ module.exports = {
     fetchAnnouncement,
     fetchAllAnnouncements,
     editAnnouncement,
+    deleteAnnouncement,
 };

@@ -2,6 +2,7 @@ const jwt = require("jsonwebtoken");
 const asyncHandler = require("express-async-handler");
 const User = require("../models/User");
 const Team = require("../models/Team");
+const Announcement = require("../models/Announcement");
 
 const generateToken = (id) => {
     return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: "30d" });
@@ -79,4 +80,27 @@ const isAdmin = asyncHandler(async (req, res, next) => {
     next();
 });
 
-module.exports = { generateToken, protect, isMember, isAdmin };
+const checkAnnouncementOwnership = async (req, res, next) => {
+    const { teamId, announcementId } = req.body;
+
+    const announcement = await Announcement.findOne({
+        _id: announcementId,
+        teamId: teamId,
+    });
+
+    if (!announcement) {
+        return res
+            .status(404)
+            .json({ error: "Announcement not found in the team" });
+    }
+
+    next();
+};
+
+module.exports = {
+    generateToken,
+    protect,
+    isMember,
+    isAdmin,
+    checkAnnouncementOwnership,
+};

@@ -13,8 +13,14 @@ const {
     fetchAnnouncement,
     fetchAllAnnouncements,
     editAnnouncement,
+    deleteAnnouncement,
 } = require("../controllers/teamController");
-const { protect, isMember, isAdmin } = require("../utils/auth");
+const {
+    protect,
+    isMember,
+    isAdmin,
+    checkAnnouncementOwnership,
+} = require("../utils/auth");
 
 router.post("/create", protect, createTeam);
 router.post("/add-member", protect, isMember, isAdmin, addMember);
@@ -26,12 +32,34 @@ router.delete("/delete", protect, isMember, isAdmin, deleteTeam);
 router.put("/leave", protect, isMember, leaveTeam);
 
 router.post("/announce", protect, isMember, isAdmin, createAnnouncement);
-router.get("/fetch-announcement", protect, isMember, fetchAnnouncement);
+router.get(
+    "/fetch-announcement",
+    protect,
+    isMember,
+    checkAnnouncementOwnership,
+    fetchAnnouncement
+);
 router.get(
     "/fetch-all-announcements",
     protect,
     isMember,
     fetchAllAnnouncements
 );
-router.put("/edit-announcement", protect, isMember, isAdmin, editAnnouncement);
+router.put(
+    "/edit-announcement",
+    protect,
+    isMember,
+    isAdmin,
+    checkAnnouncementOwnership,
+    editAnnouncement
+);
+router.delete(
+    "/delete-announcement",
+    protect,
+    isMember,
+    isAdmin,
+    checkAnnouncementOwnership,
+    deleteAnnouncement
+);
+
 module.exports = router;
