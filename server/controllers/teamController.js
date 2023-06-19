@@ -246,7 +246,7 @@ const leaveTeam = asyncHandler(async (req, res) => {
 });
 
 const createAnnouncement = asyncHandler(async (req, res) => {
-    const { teamId, title, content, files } = req.body;
+    const { teamId, title, content } = req.body;
 
     if (!content) {
         res.status(400);
@@ -264,7 +264,6 @@ const createAnnouncement = asyncHandler(async (req, res) => {
             teamId,
             title: title || "No title",
             content,
-            files,
         });
 
         res.status(200).json({ announcement });

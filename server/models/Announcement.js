@@ -29,19 +29,6 @@ const announcementSchema = new Schema(
             type: String,
             required: [true, "Announcement cannot be empty"],
         },
-        files: [
-            {
-                type: {
-                    type: String,
-                    enum: ["image", "file"],
-                    required: true,
-                },
-                url: {
-                    type: String,
-                    required: true,
-                },
-            },
-        ],
         createdAt: {
             type: Date,
             default: Date.now,
