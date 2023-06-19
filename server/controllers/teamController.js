@@ -1,5 +1,6 @@
 const Team = require("../models/Team");
 const asyncHandler = require("express-async-handler");
+const User = require("../models/User");
 
 const createTeam = asyncHandler(async (req, res) => {
     const { name, members } = req.body;
@@ -193,6 +194,57 @@ const removeMember = asyncHandler(async (req, res) => {
     }
 });
 
+const leaveTeam = asyncHandler(async (req, res) => {
+    const { teamId, newAdminId } = req.body;
+
+    if (!teamId) {
+        res.status(400);
+        throw new Error("Team ID is empty");
+    }
+
+    try {
+        const team = await Team.findById(teamId).populate("admin", "-password");
+
+        if (team.admin._id.equals(req.user._id)) {
+            if (team.members.length === 1) {
+                await Team.findByIdAndDelete(teamId);
+                res.status(200).json({ message: "Team deleted" });
+            } else {
+                if (!newAdminId) {
+                    res.status(404);
+                    throw new Error("Please assign a new admin");
+                }
+
+                const newAdmin = await User.findById(newAdminId);
+                if (!newAdmin) {
+                    res.status(404);
+                    throw new Error("New admin invalid");
+                }
+
+                team.members = team.members.filter(
+                    (member) =>
+                        member._id.toString() !== req.user._id.toString()
+                );
+                team.admin = newAdminId;
+                await team.save();
+
+                res.status(200).json({
+                    message: "Admin left the team, new admin assigned",
+                });
+            }
+        } else {
+            team.members = team.members.filter(
+                (member) => member._id.toString() !== req.user._id.toString()
+            );
+            await team.save();
+            res.status(200).json({ message: "Successfuly left the team" });
+        }
+    } catch (err) {
+        console.log(err);
+        res.status(500).json({ error: "Failed to leave the team" });
+    }
+});
+
 module.exports = {
     createTeam,
     addMember,
@@ -201,4 +253,5 @@ module.exports = {
     fetchTeam,
     fetchAllTeams,
     deleteTeam,
+    leaveTeam,
 };
