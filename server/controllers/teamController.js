@@ -1,6 +1,7 @@
-const Team = require("../models/Team");
 const asyncHandler = require("express-async-handler");
+const Team = require("../models/Team");
 const User = require("../models/User");
+const Announcement = require("../models/Announcement");
 
 const createTeam = asyncHandler(async (req, res) => {
     const { name, members } = req.body;
@@ -244,6 +245,35 @@ const leaveTeam = asyncHandler(async (req, res) => {
     }
 });
 
+const createAnnouncement = asyncHandler(async (req, res) => {
+    const { teamId, title, content, files } = req.body;
+
+    if (!content) {
+        res.status(400);
+        throw new Error("Announcement cannot be empty");
+    }
+
+    if (!teamId) {
+        res.status(400);
+        throw new Error("Team ID cannot be empty");
+    }
+
+    try {
+        const announcement = await Announcement.create({
+            author: req.user._id,
+            teamId,
+            title: title || "No title",
+            content,
+            files,
+        });
+
+        res.status(200).json({ announcement });
+    } catch (err) {
+        res.status(500);
+        throw new Error("Failed to create announcement");
+    }
+});
+
 module.exports = {
     createTeam,
     addMember,
@@ -253,4 +283,5 @@ module.exports = {
     fetchAllTeams,
     deleteTeam,
     leaveTeam,
+    createAnnouncement,
 };

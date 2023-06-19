@@ -59,6 +59,11 @@ const isAdmin = asyncHandler(async (req, res, next) => {
     const { teamId } = req.body;
     const currentUser = req.user;
 
+    if (!teamId) {
+        res.status(400);
+        throw new Error("Team ID is empty");
+    }
+
     const team = await Team.findById(teamId).populate("admin", "-password");
 
     if (!team) {
@@ -68,7 +73,7 @@ const isAdmin = asyncHandler(async (req, res, next) => {
 
     if (!team.admin._id.equals(currentUser._id)) {
         res.status(403);
-        throw new Error("Only admins can modify the team");
+        throw new Error("Only team admins can perform this action");
     }
 
     next();
