@@ -7,8 +7,7 @@ const createTeam = asyncHandler(async (req, res) => {
     const { name, members } = req.body;
 
     if (!name) {
-        res.status(400);
-        throw new Error("Team name is required");
+        return res.status(400).json({ error: "Team name is required" });
     }
 
     const parsedMembers = members ? JSON.parse(members) : [];
@@ -29,7 +28,7 @@ const createTeam = asyncHandler(async (req, res) => {
             team: newTeam,
         });
     } catch (err) {
-        throw new Error(err);
+        return res.status(500).json({ error: "Failed to create team" });
     }
 });
 
@@ -37,8 +36,7 @@ const renameTeam = asyncHandler(async (req, res) => {
     const { teamId, name } = req.body;
 
     if (!name) {
-        res.status(400);
-        throw new Error("Team name cannot be empty");
+        return res.status(400).json({ error: "Team name cannot be empty" });
     }
     const updatedTeam = await Team.findByIdAndUpdate(
         teamId,
@@ -49,19 +47,17 @@ const renameTeam = asyncHandler(async (req, res) => {
         .populate("admin", "-password -createdAt -updatedAt");
 
     if (!updatedTeam) {
-        res.status(404);
-        throw new Error("Team not found");
-    } else {
-        res.status(200).json({ team: updatedTeam });
+        return res.status(404).json({ error: "Team not found" });
     }
+
+    res.status(200).json({ team: updatedTeam });
 });
 
 const fetchTeam = asyncHandler(async (req, res) => {
     const { teamId } = req.body;
 
     if (!teamId) {
-        res.status(400);
-        throw new Error("Team ID is empty");
+        return res.status(400).json({ error: "Team ID is empty" });
     }
 
     const team = await Team.findById(teamId)
@@ -69,11 +65,10 @@ const fetchTeam = asyncHandler(async (req, res) => {
         .populate("admin", "-password -createdAt -updatedAt");
 
     if (!team) {
-        res.status(404);
-        throw new Error("Team not found");
-    } else {
-        res.status(200).json({ team });
+        return res.status(404).json("Team not found");
     }
+
+    res.status(200).json({ team });
 });
 
 const fetchAllTeams = asyncHandler(async (req, res) => {
@@ -91,22 +86,19 @@ const deleteTeam = asyncHandler(async (req, res) => {
     const { teamId } = req.body;
 
     if (!teamId) {
-        res.status(404);
-        throw new Error("Team ID is empty");
+        return res.status(404).json({ error: "Team ID is empty" });
     }
 
     try {
         const deletedTeam = await Team.findByIdAndDelete(teamId);
 
         if (!deletedTeam) {
-            res.status(404);
-            throw new Error("Team not found");
+            return res.status(404).json({ error: "Team not found" });
         }
 
         res.status(200).json({ message: "Team successfully deleted" });
     } catch (error) {
-        res.status(500);
-        throw new Error("Failed to delete team");
+        return res.status(500).json({ error: "Failed to delete team" });
     }
 });
 
@@ -114,20 +106,19 @@ const addMember = asyncHandler(async (req, res) => {
     const { teamId, memberId } = req.body;
 
     if (!teamId || !memberId) {
-        res.status(400);
-        throw new Error("Team and member IDs are required");
+        return res
+            .status(400)
+            .json({ error: "Team and member IDs are required" });
     }
 
     const team = await Team.findById(teamId);
     if (!team) {
-        res.status(404);
-        throw new Error("Team not found");
+        return res.status(404).json({ error: "Team not found" });
     }
 
     const isMemberAlreadyInTeam = team.members.includes(memberId);
     if (isMemberAlreadyInTeam) {
-        res.status(400);
-        throw new Error("Member is already in the team");
+        return res.status(400).json({ error: "Member is already in the team" });
     }
 
     const updatedTeam = await Team.findByIdAndUpdate(
@@ -143,36 +134,37 @@ const addMember = asyncHandler(async (req, res) => {
         .populate("admin", "-password -createdAt -updatedAt");
 
     if (!updatedTeam) {
-        res.status(400);
-        throw new Error("Team not found");
-    } else {
-        res.status(200).json({ team: updatedTeam });
+        return res.status(400).json({ error: "Team not found" });
     }
+
+    res.status(200).json({ team: updatedTeam });
 });
 
 const removeMember = asyncHandler(async (req, res) => {
     const { teamId, memberId } = req.body;
 
     if (!teamId || !memberId) {
-        res.status(400);
-        throw new Error("Team and member IDs are required");
+        return res
+            .status(400)
+            .json({ error: "Team and member IDs are required" });
     }
 
     if (memberId === req.user._id.toString()) {
-        res.status(400);
-        throw new Error("You cannot remove yourself");
+        return res.status(400).json({
+            error: "You cannot remove yourself from a team. Please use the leave route instead",
+        });
     }
 
     const team = await Team.findById(teamId);
     if (!team) {
-        res.status(404);
-        throw new Error("Team not found");
+        return res.status(404).json({ error: "Team not found" });
     }
 
     const isMemberOfTeam = team.members.includes(memberId);
     if (!isMemberOfTeam) {
-        res.status(400);
-        throw new Error("User is not a member of the team");
+        return (
+            res.status(400), json({ error: "User is not a member of the team" })
+        );
     }
 
     const updatedTeam = await Team.findByIdAndUpdate(
@@ -188,19 +180,17 @@ const removeMember = asyncHandler(async (req, res) => {
         .populate("admin", "-password -createdAt -updatedAt");
 
     if (!updatedTeam) {
-        res.status(400);
-        throw new Error("Team not found");
-    } else {
-        res.status(200).json({ team: updatedTeam });
+        return res.status(400).json({ error: "Team not found" });
     }
+
+    res.status(200).json({ team: updatedTeam });
 });
 
 const leaveTeam = asyncHandler(async (req, res) => {
     const { teamId, newAdminId } = req.body;
 
     if (!teamId) {
-        res.status(400);
-        throw new Error("Team ID is empty");
+        return res.status(400).json({ error: "Team ID is empty" });
     }
 
     try {
@@ -212,14 +202,14 @@ const leaveTeam = asyncHandler(async (req, res) => {
                 res.status(200).json({ message: "Team deleted" });
             } else {
                 if (!newAdminId) {
-                    res.status(404);
-                    throw new Error("Please assign a new admin");
+                    return res
+                        .status(404)
+                        .json({ error: "Please assign a new admin" });
                 }
 
                 const newAdmin = await User.findById(newAdminId);
                 if (!newAdmin) {
-                    res.status(404);
-                    throw new Error("New admin invalid");
+                    return res.status(404).json({ error: "New admin invalid" });
                 }
 
                 team.members = team.members.filter(
@@ -249,13 +239,11 @@ const createAnnouncement = asyncHandler(async (req, res) => {
     const { teamId, title, content } = req.body;
 
     if (!content) {
-        res.status(400);
-        throw new Error("Announcement cannot be empty");
+        return res.status(400).json({ error: "Announcement cannot be empty" });
     }
 
     if (!teamId) {
-        res.status(400);
-        throw new Error("Team ID cannot be empty");
+        return res.status(400).json({ error: "Team ID cannot be empty" });
     }
 
     try {
@@ -268,8 +256,7 @@ const createAnnouncement = asyncHandler(async (req, res) => {
 
         res.status(200).json({ announcement });
     } catch (err) {
-        res.status(500);
-        throw new Error("Failed to create announcement");
+        return res.status(500).json({ error: "Failed to create announcement" });
     }
 });
 
@@ -277,8 +264,7 @@ const fetchAnnouncement = asyncHandler(async (req, res) => {
     const { announcementId } = req.body;
 
     if (!announcementId) {
-        res.status(400);
-        throw new Error("Announcement ID is empty");
+        return res.status(400).json({ error: "Announcement ID is empty" });
     }
 
     const announcement = await Announcement.findById(announcementId).populate(
@@ -287,8 +273,7 @@ const fetchAnnouncement = asyncHandler(async (req, res) => {
     );
 
     if (!announcement) {
-        res.status(404);
-        throw new Error("Announcement not found");
+        return res.status(404).json({ error: "Announcement not found" });
     }
 
     res.status(200).json({ announcement });
@@ -298,8 +283,7 @@ const fetchAllAnnouncements = asyncHandler(async (req, res) => {
     const { teamId } = req.body;
 
     if (!teamId) {
-        res.status(400);
-        throw new Error("Team ID is empty");
+        return res.status(400).json({ error: "Team ID is empty" });
     }
 
     const announcements = await Announcement.find({ teamId })
@@ -313,8 +297,7 @@ const editAnnouncement = asyncHandler(async (req, res) => {
     const { announcementId, title, content } = req.body;
 
     if (!announcementId) {
-        res.status(400);
-        throw new Error("Announcement ID is empty");
+        return res.status(400).json({ error: "Announcement ID is empty" });
     }
 
     const editedAnnouncement = await Announcement.findByIdAndUpdate(
@@ -324,8 +307,7 @@ const editAnnouncement = asyncHandler(async (req, res) => {
     ).populate("author", "-password -createdAt -updatedAt");
 
     if (!editAnnouncement) {
-        res.status(404);
-        throw new Error("Announcement not found");
+        return res.status(404).json({ error: "Announcement not found" });
     }
 
     res.status(200).json({ announcement: editedAnnouncement });
@@ -335,8 +317,7 @@ const deleteAnnouncement = asyncHandler(async (req, res) => {
     const { announcementId } = req.body;
 
     if (!announcementId) {
-        res.status(400);
-        throw new Error("Announcement ID is empty");
+        return res.status(400).json({ error: "Announcement ID is empty" });
     }
 
     try {
@@ -345,14 +326,12 @@ const deleteAnnouncement = asyncHandler(async (req, res) => {
         );
 
         if (!deletedAnnouncement) {
-            res.status(404);
-            throw new Error("Announcement not found");
+            return res.status(404).json({ error: "Announcement not found" });
         }
 
         res.status(200).json({ message: "Announcement successfully deleted" });
     } catch (error) {
-        res.status(500);
-        throw new Error("Failed to delete announcement");
+        return res.status(500).json({ error: "Failed to delete announcement" });
     }
 });
 

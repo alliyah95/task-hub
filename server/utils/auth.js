@@ -22,14 +22,12 @@ const protect = asyncHandler(async (req, res, next) => {
 
             next();
         } catch (error) {
-            res.status(401);
-            throw new Error("Unauthorized");
+            return res.status(401).json({ error: "Unauthorized" });
         }
     }
 
     if (!token) {
-        res.status(401);
-        throw new Error("Unauthorized");
+        return res.status(401).json({ error: "Unauthorized" });
     }
 });
 
@@ -40,8 +38,7 @@ const isMember = asyncHandler(async (req, res, next) => {
     const team = await Team.findById(teamId).populate("members", "-password");
 
     if (!team) {
-        res.status(404);
-        throw new Error("Team not found");
+        return res.status(404).json({ error: "Team not found" });
     }
 
     const isMember = team.members.find((member) =>
@@ -49,8 +46,9 @@ const isMember = asyncHandler(async (req, res, next) => {
     );
 
     if (!isMember) {
-        res.status(403);
-        throw new Error("You are not a member of this team");
+        return res
+            .status(403)
+            .json({ error: "You are not a member of this team" });
     }
 
     next();
@@ -61,20 +59,19 @@ const isAdmin = asyncHandler(async (req, res, next) => {
     const currentUser = req.user;
 
     if (!teamId) {
-        res.status(400);
-        throw new Error("Team ID is empty");
+        return res.status(400).json({ error: "Team ID is empty" });
     }
 
     const team = await Team.findById(teamId).populate("admin", "-password");
 
     if (!team) {
-        res.status(404);
-        throw new Error("Team not found");
+        return res.status(404).json({ error: "Team not found" });
     }
 
     if (!team.admin._id.equals(currentUser._id)) {
-        res.status(403);
-        throw new Error("Only team admins can perform this action");
+        return res
+            .status(403)
+            .json({ error: "Only team admins can perform this action" });
     }
 
     next();

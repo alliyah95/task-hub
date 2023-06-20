@@ -7,15 +7,15 @@ const registerUser = asyncHandler(async (req, res) => {
     const { name, username, password, picture } = req.body;
 
     if (!name || !username || !password) {
-        res.status(400);
-        throw new Error("Please provide all the needed information");
+        return res
+            .status(400)
+            .json({ error: "Please provide all the needed information" });
     }
 
     const userExists = await User.findOne({ username });
 
     if (userExists) {
-        res.status(400);
-        throw new Error("Username already in use");
+        return res.status(400).json({ error: "Username already in use" });
     }
 
     const salt = await bcrypt.genSalt(12);
@@ -37,8 +37,7 @@ const registerUser = asyncHandler(async (req, res) => {
             token: generateToken(user._id),
         });
     } else {
-        res.status(400);
-        throw new Error("Failed to register user");
+        return res.status(400).json({ error: "Failed to register user" });
     }
 });
 
@@ -46,8 +45,9 @@ const loginUser = asyncHandler(async (req, res) => {
     const { username, password } = req.body;
 
     if (!username || !password) {
-        res.status(400);
-        throw new Error("Please provide all the needed information");
+        return res
+            .status(400)
+            .json({ error: "Please provide all the needed information" });
     }
 
     const user = await User.findOne({ username });
@@ -61,8 +61,9 @@ const loginUser = asyncHandler(async (req, res) => {
             token: generateToken(user._id),
         });
     } else {
-        res.status(400);
-        throw new Error("Incorrect username or password");
+        return res
+            .status(400)
+            .json({ error: "Incorrect username or password" });
     }
 });
 
