@@ -6,7 +6,7 @@ const TASK_STATUS = ["todo", "ongoing", "finished"];
 
 const createTask = asyncHandler(async (req, res) => {
     const { description, status, dueDate, teamId, listId } = req.body;
-    const { teamTask, addToList } = req.query;
+    const { addToList } = req.query;
 
     if (!description) {
         return res.status(404).json({ error: "Task description is empty" });
@@ -31,7 +31,7 @@ const createTask = asyncHandler(async (req, res) => {
         dueDate: formattedDate,
     };
 
-    if (teamTask) {
+    if (req.path === "/create-team-task") {
         taskData.teamId = teamId;
     }
 
@@ -45,7 +45,6 @@ const createTask = asyncHandler(async (req, res) => {
 
 const createList = asyncHandler(async (req, res) => {
     const { title, teamId } = req.body;
-    const { teamList } = req.query;
 
     if (!title) {
         return res.status(404).json({ error: "List title is empty" });
@@ -56,7 +55,7 @@ const createList = asyncHandler(async (req, res) => {
         createdBy: req.user._id,
     };
 
-    if (teamList) {
+    if (req.path === "/create-team-list") {
         listData.teamId = teamId;
     }
 

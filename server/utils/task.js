@@ -37,7 +37,7 @@ const validateTeamTask = async (req, res, next) => {
             return res.status(404).json({ error: "Team not found" });
         }
         if (listId) {
-            const list = await List.findOne({ _id: listId, team: teamId });
+            const list = await List.findOne({ _id: listId, teamId });
 
             if (!list) {
                 return res.status(404).json({
