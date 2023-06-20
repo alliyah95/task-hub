@@ -11,7 +11,7 @@ const taskSchema = new Schema(
         },
         status: {
             type: String,
-            enum: ["todo, ongoing", "finished"],
+            enum: ["todo", "ongoing", "finished"],
             default: "todo",
         },
         assignee: {
