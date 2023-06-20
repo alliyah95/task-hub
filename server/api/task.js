@@ -1,13 +1,28 @@
 const express = require("express");
 const router = express.Router();
-const { protect } = require("../utils/auth");
-const { checkListOwnership } = require("../utils/task");
+const { protect, isMember } = require("../utils/auth");
 const {
-    createUserTask,
-    createUserList,
-} = require("../controllers/taskController");
+    checkListOwnership,
+    validateTeamTask,
+    validateTeamList,
+} = require("../utils/task");
+const { createTask, createList } = require("../controllers/taskController");
 
-router.post("/create-user-task", protect, checkListOwnership, createUserTask);
-router.post("/create-user-list", protect, createUserList);
+router.post("/create-user-task", protect, checkListOwnership, createTask);
+router.post(
+    "/create-team-task",
+    protect,
+    isMember,
+    validateTeamTask,
+    createTask
+);
+router.post("/create-user-list", protect, createList);
+router.post(
+    "/create-team-list",
+    protect,
+    isMember,
+    validateTeamList,
+    createList
+);
 
 module.exports = router;

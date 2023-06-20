@@ -4,8 +4,9 @@ const List = require("../models/List");
 
 const TASK_STATUS = ["todo", "ongoing", "finished"];
 
-const createUserTask = asyncHandler(async (req, res) => {
-    const { description, status, dueDate } = req.body;
+const createTask = asyncHandler(async (req, res) => {
+    const { description, status, dueDate, teamId, listId } = req.body;
+    const { teamTask, addToList } = req.query;
 
     if (!description) {
         return res.status(404).json({ error: "Task description is empty" });
@@ -22,30 +23,45 @@ const createUserTask = asyncHandler(async (req, res) => {
         return res.status(400).json({ error: "Invalid due date format" });
     }
 
-    const task = await Task.create({
+    const taskData = {
         description,
         status,
         assignee: req.user._id,
         assignedBy: req.user._id,
         dueDate: formattedDate,
-    });
+    };
 
+    if (teamTask) {
+        taskData.teamId = teamId;
+    }
+
+    if (addToList) {
+        taskData.listId = listId;
+    }
+
+    const task = await Task.create(taskData);
     return res.status(200).json({ task });
 });
 
-const createUserList = asyncHandler(async (req, res) => {
-    const { title } = req.body;
+const createList = asyncHandler(async (req, res) => {
+    const { title, teamId } = req.body;
+    const { teamList } = req.query;
 
     if (!title) {
         return res.status(404).json({ error: "List title is empty" });
     }
 
-    const list = await List.create({
+    const listData = {
         title,
         createdBy: req.user._id,
-    });
+    };
 
+    if (teamList) {
+        listData.teamId = teamId;
+    }
+
+    const list = await List.create(listData);
     return res.status(200).json({ list });
 });
 
-module.exports = { createUserTask, createUserList };
+module.exports = { createTask, createList };

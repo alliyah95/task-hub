@@ -1,4 +1,5 @@
 const List = require("../models/List");
+const Team = require("../models/Team");
 
 const checkListOwnership = async (req, res, next) => {
     const { listId } = req.body;
@@ -26,4 +27,44 @@ const checkListOwnership = async (req, res, next) => {
     }
 };
 
-module.exports = { checkListOwnership };
+const validateTeamTask = async (req, res, next) => {
+    const { teamId, listId } = req.body;
+
+    try {
+        const team = await Team.findById(teamId);
+
+        if (!team) {
+            return res.status(404).json({ error: "Team not found" });
+        }
+        if (listId) {
+            const list = await List.findOne({ _id: listId, team: teamId });
+
+            if (!list) {
+                return res.status(404).json({
+                    error: "List not found or not associated with the team",
+                });
+            }
+        }
+        next();
+    } catch (error) {
+        return res.status(500).json({ error: "Failed to validate team task" });
+    }
+};
+
+const validateTeamList = async (req, res, next) => {
+    const { teamId } = req.body;
+
+    try {
+        const team = await Team.findById(teamId);
+
+        if (!team) {
+            return res.status(404).json({ error: "Team not found" });
+        }
+
+        next();
+    } catch (error) {
+        return res.status(500).json({ error: "Failed to validate list" });
+    }
+};
+
+module.exports = { checkListOwnership, validateTeamTask, validateTeamList };
