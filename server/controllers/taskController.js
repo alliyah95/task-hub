@@ -35,11 +35,21 @@ const createTask = asyncHandler(async (req, res) => {
         taskData.teamId = teamId;
     }
 
-    if (addToList) {
-        taskData.listId = listId;
-    }
-
     const task = await Task.create(taskData);
+
+    if (addToList) {
+        const list = await List.findById(listId);
+
+        if (!list) {
+            return res.status(404).json({ error: "List not found" });
+        }
+
+        list.tasks.push(task._id);
+        task.listId = listId;
+
+        await task.save();
+        await list.save();
+    }
     return res.status(200).json({ task });
 });
 
