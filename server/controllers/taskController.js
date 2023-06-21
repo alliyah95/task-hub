@@ -100,4 +100,31 @@ const deleteTask = asyncHandler(async (req, res) => {
     res.status(200).json({ message: "Task successfully deleted" });
 });
 
-module.exports = { createTask, createList, deleteTask };
+const deleteList = asyncHandler(async (req, res) => {
+    const { listId } = req.body;
+
+    if (!listId) {
+        return res.status(400).json({ error: "List ID is not provided" });
+    }
+
+    try {
+        const list = await List.findById(listId).populate("tasks");
+
+        if (!list) {
+            return res.status(404).json({ error: "List not found" });
+        }
+
+        for (let task of list.tasks) {
+            await Task.findByIdAndDelete(task);
+        }
+
+        const deletedList = await List.findByIdAndDelete(listId);
+        if (!deletedList) {
+            return res.status(500).json({ error: "Failed to delete list" });
+        }
+
+        res.status(200).json({ message: "List successfully deleted" });
+    } catch (err) {}
+});
+
+module.exports = { createTask, createList, deleteTask, deleteList };

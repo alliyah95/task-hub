@@ -82,7 +82,7 @@ const validateTaskOwner = async (req, res, next) => {
             return res.status(404).json({ error: "Task not found" });
         }
 
-        if (task.assignedBy !== req.user._id) {
+        if (!task.assignedBy.equals(req.user._id)) {
             return res
                 .status(401)
                 .json({ error: "You are not the owner of this task" });
@@ -94,9 +94,46 @@ const validateTaskOwner = async (req, res, next) => {
     }
 };
 
+const validateListOwner = async (req, res, next) => {
+    const { listId } = req.body;
+
+    if (!listId) {
+        return res.status(400).json({ error: "List ID is empty" });
+    }
+
+    try {
+        const list = await List.findById(listId);
+
+        if (!list) {
+            return res.status(404).json({ error: "List not found" });
+        }
+
+        if (!list.createdBy.equals(req.user._id)) {
+            return res
+                .status(401)
+                .json({ error: "You are not the owner of this list" });
+        }
+
+        const hasMultipleOwners = list.tasks.find(
+            (task) => !task.equals(req.user._id)
+        );
+
+        if (hasMultipleOwners) {
+            return res.status(401).json({
+                error: "Failed to delete. List has multiple owners",
+            });
+        }
+
+        next();
+    } catch (err) {
+        return res.status(500).json({ error: "Failed to validate list" });
+    }
+};
+
 module.exports = {
     checkListOwnership,
     validateTeamTask,
     validateTeamList,
     validateTaskOwner,
+    validateListOwner,
 };

@@ -6,11 +6,13 @@ const {
     validateTeamTask,
     validateTeamList,
     validateTaskOwner,
+    validateListOwner,
 } = require("../utils/task");
 const {
     createTask,
     createList,
     deleteTask,
+    deleteList,
 } = require("../controllers/taskController");
 
 router.post("/create-user-task", protect, checkListOwnership, createTask);
@@ -30,5 +32,6 @@ router.post(
     createList
 );
 router.delete("/delete-task", protect, validateTaskOwner, deleteTask);
+router.delete("/delete-list", protect, validateListOwner, deleteList);
 
 module.exports = router;
