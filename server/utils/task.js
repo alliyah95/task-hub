@@ -79,6 +79,7 @@ const validateAssigneeMembership = async (req, res, next) => {
 
     next();
 };
+
 const validateTeamList = async (req, res, next) => {
     const { teamId } = req.body;
 
@@ -157,6 +158,45 @@ const validateListOwner = async (req, res, next) => {
     }
 };
 
+const validateTaskAccess = async (req, res, next) => {
+    const { taskId } = req.body;
+
+    if (!taskId) {
+        return res.status(400).json({ error: "Task ID is empty" });
+    }
+
+    const task = await Task.findById(taskId);
+    if (!task) {
+        return res.status(404).json({ error: "Task not found" });
+    }
+
+    if (task.teamId) {
+        const taskTeam = await Team.findById(task.teamId).populate(
+            "members",
+            "-password"
+        );
+
+        const isMember = taskTeam.members.find((member) =>
+            member._id.equals(req.user._id)
+        );
+
+        if (!isMember) {
+            return res
+                .status(403)
+                .json({ error: "Unauthorized to access this task" });
+        }
+
+        next();
+    } else {
+        if (!task.assignedBy.equals(req.user._id)) {
+            return res
+                .status(401)
+                .json({ error: "You are not the owner of this task" });
+        }
+
+        next();
+    }
+};
 module.exports = {
     checkListOwnership,
     validateTeamTask,
@@ -164,4 +204,5 @@ module.exports = {
     validateTeamList,
     validateTaskOwner,
     validateListOwner,
+    validateTaskAccess,
 };

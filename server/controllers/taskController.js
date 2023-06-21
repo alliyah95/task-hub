@@ -128,4 +128,10 @@ const deleteList = asyncHandler(async (req, res) => {
     } catch (err) {}
 });
 
-module.exports = { createTask, createList, deleteTask, deleteList };
+const fetchTask = asyncHandler(async (req, res) => {
+    const { taskId } = req.body;
+    const task = await Task.findById(taskId);
+    res.status(200).json({ task });
+});
+
+module.exports = { createTask, createList, deleteTask, deleteList, fetchTask };
