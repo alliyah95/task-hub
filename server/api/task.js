@@ -4,6 +4,7 @@ const { protect, isMember } = require("../utils/auth");
 const {
     checkListOwnership,
     validateTeamTask,
+    validateAssigneeMembership,
     validateTeamList,
     validateTaskOwner,
     validateListOwner,
@@ -21,6 +22,7 @@ router.post(
     protect,
     isMember,
     validateTeamTask,
+    validateAssigneeMembership,
     createTask
 );
 router.post("/create-user-list", protect, createList);

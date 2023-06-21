@@ -1,6 +1,7 @@
 const List = require("../models/List");
 const Team = require("../models/Team");
 const Task = require("../models/Task");
+const User = require("../models/User");
 
 const checkListOwnership = async (req, res, next) => {
     const { listId } = req.body;
@@ -52,6 +53,32 @@ const validateTeamTask = async (req, res, next) => {
     }
 };
 
+const validateAssigneeMembership = async (req, res, next) => {
+    const { assignee, teamId } = req.body;
+
+    if (!assignee) {
+        next();
+    }
+
+    const assigneeUser = await User.findById(assignee);
+
+    if (!assigneeUser) {
+        return res.status(404).json({ error: "Assignee not found" });
+    }
+
+    const team = await Team.findById(teamId).populate("members", "-password");
+    const isAssigneeMember = team.members.find((member) =>
+        member._id.equals(assignee)
+    );
+
+    if (!isAssigneeMember) {
+        return res
+            .status(403)
+            .json({ error: "Assignee is not a member of this team" });
+    }
+
+    next();
+};
 const validateTeamList = async (req, res, next) => {
     const { teamId } = req.body;
 
@@ -133,6 +160,7 @@ const validateListOwner = async (req, res, next) => {
 module.exports = {
     checkListOwnership,
     validateTeamTask,
+    validateAssigneeMembership,
     validateTeamList,
     validateTaskOwner,
     validateListOwner,

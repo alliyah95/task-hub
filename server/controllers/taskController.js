@@ -5,7 +5,7 @@ const List = require("../models/List");
 const TASK_STATUS = ["todo", "ongoing", "finished"];
 
 const createTask = asyncHandler(async (req, res) => {
-    const { description, status, dueDate, teamId, listId } = req.body;
+    const { description, status, dueDate, teamId, listId, assignee } = req.body;
     const { addToList } = req.query;
 
     if (!description) {
@@ -33,6 +33,7 @@ const createTask = asyncHandler(async (req, res) => {
 
     if (req.path === "/create-team-task") {
         taskData.teamId = teamId;
+        taskData.assignee = assignee;
     }
 
     const task = await Task.create(taskData);
