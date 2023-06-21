@@ -5,8 +5,13 @@ const {
     checkListOwnership,
     validateTeamTask,
     validateTeamList,
+    validateTaskOwner,
 } = require("../utils/task");
-const { createTask, createList } = require("../controllers/taskController");
+const {
+    createTask,
+    createList,
+    deleteTask,
+} = require("../controllers/taskController");
 
 router.post("/create-user-task", protect, checkListOwnership, createTask);
 router.post(
@@ -24,5 +29,6 @@ router.post(
     validateTeamList,
     createList
 );
+router.delete("/delete-task", protect, validateTaskOwner, deleteTask);
 
 module.exports = router;

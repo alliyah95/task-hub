@@ -1,5 +1,6 @@
 const List = require("../models/List");
 const Team = require("../models/Team");
+const Task = require("../models/Task");
 
 const checkListOwnership = async (req, res, next) => {
     const { listId } = req.body;
@@ -67,4 +68,35 @@ const validateTeamList = async (req, res, next) => {
     }
 };
 
-module.exports = { checkListOwnership, validateTeamTask, validateTeamList };
+const validateTaskOwner = async (req, res, next) => {
+    const { taskId } = req.body;
+
+    if (!taskId) {
+        return res.status(400).json({ error: "Task ID is empty" });
+    }
+
+    try {
+        const task = await Task.findById(taskId);
+
+        if (!task) {
+            return res.status(404).json({ error: "Task not found" });
+        }
+
+        if (task.assignedBy !== req.user._id) {
+            return res
+                .status(401)
+                .json({ error: "You are not the owner of this task" });
+        }
+
+        next();
+    } catch (err) {
+        return res.status(500).json({ error: "Failed to validate task" });
+    }
+};
+
+module.exports = {
+    checkListOwnership,
+    validateTeamTask,
+    validateTeamList,
+    validateTaskOwner,
+};

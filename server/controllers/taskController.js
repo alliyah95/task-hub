@@ -73,4 +73,31 @@ const createList = asyncHandler(async (req, res) => {
     return res.status(200).json({ list });
 });
 
-module.exports = { createTask, createList };
+const deleteTask = asyncHandler(async (req, res) => {
+    const { taskId } = req.body;
+
+    if (!taskId) {
+        return res.status(400).json({ error: "Task ID is empty" });
+    }
+
+    const task = await Task.findById(taskId);
+    if (!task) {
+        return res.status(404).json({ error: "Task not found" });
+    }
+
+    if (task.listId) {
+        const list = await List.findById(task.listId);
+        if (!list) {
+            return res.status(404).json({ error: "List not found" });
+        }
+
+        await List.findByIdAndUpdate(task.listId, {
+            $pull: { tasks: taskId },
+        });
+    }
+
+    await Task.findByIdAndDelete(taskId);
+    res.status(200).json({ message: "Task successfully deleted" });
+});
+
+module.exports = { createTask, createList, deleteTask };
