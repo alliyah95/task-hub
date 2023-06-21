@@ -57,7 +57,7 @@ const validateAssigneeMembership = async (req, res, next) => {
     const { assignee, teamId } = req.body;
 
     if (!assignee) {
-        next();
+        return next();
     }
 
     const assigneeUser = await User.findById(assignee);

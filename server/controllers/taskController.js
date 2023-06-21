@@ -33,7 +33,7 @@ const createTask = asyncHandler(async (req, res) => {
 
     if (req.path === "/create-team-task") {
         taskData.teamId = teamId;
-        taskData.assignee = assignee;
+        taskData.assignee = assignee || req.user._id;
     }
 
     const task = await Task.create(taskData);
