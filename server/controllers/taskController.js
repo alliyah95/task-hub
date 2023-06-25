@@ -154,6 +154,23 @@ const fetchUserLists = asyncHandler(async (req, res) => {
     res.status(200).json({ lists: [ungroupedTasks, ...lists] });
 });
 
+const fetchTeamLists = asyncHandler(async (req, res) => {
+    const { teamId } = req.body;
+
+    if (!teamId) {
+        res.status(400).json({ error: "Team ID is required" });
+    }
+    const ungroupedTeamTasks = { title: "Tasks", tasks: [] };
+    const teamTasks = await Task.find({
+        teamId: teamId,
+        listId: { $exists: false },
+    });
+    ungroupedTeamTasks.tasks = teamTasks;
+
+    const teamLists = await List.find({ teamId: teamId }).populate("tasks");
+    res.status(200).json({ lists: [ungroupedTeamTasks, ...teamLists] });
+});
+
 module.exports = {
     createTask,
     createList,
@@ -161,4 +178,5 @@ module.exports = {
     deleteList,
     fetchTask,
     fetchUserLists,
+    fetchTeamLists,
 };
