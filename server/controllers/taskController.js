@@ -134,39 +134,24 @@ const fetchTask = asyncHandler(async (req, res) => {
     res.status(200).json({ task });
 });
 
-// use for fetching Due Today Tasks and Ungrouped Tasks
-const fetchUserTasks = asyncHandler(async (req, res) => {
-    const { dueToday } = req.query;
+const fetchUserLists = asyncHandler(async (req, res) => {
+    const ungroupedTasks = { title: "Tasks", tasks: [] };
 
-    let query = {
+    const tasks = await Task.find({
         assignedBy: req.user._id,
         assignee: req.user._id,
         teamId: { $exists: false },
         listId: { $exists: false },
-    };
+    });
 
-    if (dueToday && dueToday.toLowerCase() === "true") {
-        const today = new Date();
-        today.setUTCHours(0, 0, 0, 0);
+    ungroupedTasks.tasks = tasks;
 
-        query.dueDate = {
-            $gte: today,
-            $lt: new Date(today.getTime() + 24 * 60 * 60 * 1000),
-        };
-    }
-
-    const tasks = await Task.find(query);
-    res.status(200).json({ tasks });
-});
-
-// use for fetching tasks in lists
-const fetchUserLists = asyncHandler(async (req, res) => {
     const lists = await List.find({
         teamId: { $exists: false },
         createdBy: req.user._id,
     }).populate("tasks", "-teamId");
 
-    res.json({ lists });
+    res.status(200).json({ lists: [ungroupedTasks, ...lists] });
 });
 
 module.exports = {
@@ -175,6 +160,5 @@ module.exports = {
     deleteTask,
     deleteList,
     fetchTask,
-    fetchUserTasks,
     fetchUserLists,
 };
