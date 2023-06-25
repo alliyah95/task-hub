@@ -160,14 +160,14 @@ const fetchUserTasks = asyncHandler(async (req, res) => {
 });
 
 // use for fetching tasks in lists
-// const fetchUserLists = asyncHandler(async (req, res) => {
-//     const lists = await List.find({
-//         teamId: { $exists: false },
-//         createdBy: req.user._id,
-//     }).populate("tasks", "-teamId");
+const fetchUserLists = asyncHandler(async (req, res) => {
+    const lists = await List.find({
+        teamId: { $exists: false },
+        createdBy: req.user._id,
+    }).populate("tasks", "-teamId");
 
-//     res.json({ lists });
-// });
+    res.json({ lists });
+});
 
 module.exports = {
     createTask,
@@ -176,4 +176,5 @@ module.exports = {
     deleteList,
     fetchTask,
     fetchUserTasks,
+    fetchUserLists,
 };

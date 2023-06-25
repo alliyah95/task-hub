@@ -17,6 +17,7 @@ const {
     deleteList,
     fetchTask,
     fetchUserTasks,
+    fetchUserLists,
 } = require("../controllers/taskController");
 
 router.post("/create-user-task", protect, checkListOwnership, createTask);
@@ -40,5 +41,6 @@ router.delete("/delete-task", protect, validateTaskOwner, deleteTask);
 router.delete("/delete-list", protect, validateListOwner, deleteList);
 router.get("/fetch", protect, validateTaskAccess, fetchTask);
 router.get("/fetch-user-tasks", protect, fetchUserTasks);
+router.get("/fetch-user-lists", protect, fetchUserLists);
 
 module.exports = router;
