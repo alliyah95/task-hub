@@ -197,6 +197,31 @@ const validateTaskAccess = async (req, res, next) => {
         next();
     }
 };
+
+// for checking the validity of new Task values for editing
+const validateTaskInfo = async (req, res, next) => {
+    const TASK_STATUS = ["todo", "ongoing", "finished"];
+    const { status, assignee, dueDate } = req.body;
+
+    if (status && !TASK_STATUS.includes(status)) {
+        res.status(400).json({ error: "Invalid task status" });
+    }
+
+    if (assignee) {
+        const assigneeExists = User.findById(assignee);
+        if (!assigneeExists) {
+            res.status(400).json({ error: "Invalid assignee" });
+        }
+    }
+
+    if (dueDate) {
+        if (!(dueDate instanceof Date && !isNaN(dueDate))) {
+            return res.status(400).json({ error: "Invalid due date format" });
+        }
+    }
+
+    next();
+};
 module.exports = {
     checkListOwnership,
     validateTeamTask,
@@ -205,4 +230,5 @@ module.exports = {
     validateTaskOwner,
     validateListOwner,
     validateTaskAccess,
+    validateTaskInfo,
 };

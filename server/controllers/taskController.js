@@ -171,6 +171,31 @@ const fetchTeamLists = asyncHandler(async (req, res) => {
     res.status(200).json({ lists: [ungroupedTeamTasks, ...teamLists] });
 });
 
+const editTask = asyncHandler(async (req, res) => {
+    const { taskId, description, status, assignee, dueDate } = req.body;
+
+    const task = await Task.findById(taskId);
+
+    if (description) {
+        task.description = description;
+    }
+
+    if (status) {
+        task.status = status;
+    }
+
+    if (assignee) {
+        task.status = assignee;
+    }
+
+    if (dueDate) {
+        task.dueDate = new Date(dueDate);
+    }
+
+    const updatedTask = await task.save();
+    res.status(200).json({ task: updatedTask });
+});
+
 module.exports = {
     createTask,
     createList,
@@ -179,4 +204,5 @@ module.exports = {
     fetchTask,
     fetchUserLists,
     fetchTeamLists,
+    editTask,
 };
