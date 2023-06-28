@@ -196,6 +196,18 @@ const editTask = asyncHandler(async (req, res) => {
     res.status(200).json({ task: updatedTask });
 });
 
+const editListTitle = asyncHandler(async (req, res) => {
+    const { listId, title } = req.body;
+    const list = await List.findById(listId).populate("tasks");
+
+    if (title) {
+        list.title = title;
+    }
+
+    const updatedList = await list.save();
+    res.status(200).json({ list: updatedList });
+});
+
 module.exports = {
     createTask,
     createList,
@@ -205,4 +217,5 @@ module.exports = {
     fetchUserLists,
     fetchTeamLists,
     editTask,
+    editListTitle,
 };

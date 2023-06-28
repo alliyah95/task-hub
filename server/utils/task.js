@@ -146,9 +146,10 @@ const validateListOwner = async (req, res, next) => {
             (task) => !task.equals(req.user._id)
         );
 
+        console.log(hasMultipleOwners);
         if (hasMultipleOwners) {
             return res.status(401).json({
-                error: "Failed to delete. List has multiple owners",
+                error: "Failed to modify. List has multiple owners",
             });
         }
 
