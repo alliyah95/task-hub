@@ -2,20 +2,21 @@ const asyncHandler = require("express-async-handler");
 const Task = require("../models/Task");
 const List = require("../models/List");
 
-const TASK_STATUS = ["todo", "ongoing", "finished"];
-
 const createTask = asyncHandler(async (req, res) => {
     const { description, status, dueDate, teamId, listId, assignee } = req.body;
     const { addToList } = req.query;
 
+    // done
     if (!description) {
         return res.status(404).json({ error: "Task description is empty" });
     }
 
+    // done
     if (!TASK_STATUS.includes(status)) {
         return res.status(400).json({ error: "Invalid task status" });
     }
 
+    // done
     let formattedDate;
     try {
         formattedDate = new Date(dueDate);
@@ -31,6 +32,7 @@ const createTask = asyncHandler(async (req, res) => {
         dueDate: formattedDate,
     };
 
+    // assignee is already validated using validateAssigneeMembership middleware
     if (req.path === "/create-team-task") {
         taskData.teamId = teamId;
         taskData.assignee = assignee || req.user._id;
