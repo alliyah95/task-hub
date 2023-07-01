@@ -20,7 +20,7 @@ const {
     isMember,
     isAdmin,
     checkAnnouncementOwnership,
-} = require("../utils/auth");
+} = require("../middleware/auth");
 
 router.post("/create", protect, createTeam);
 router.post("/add-member", protect, isMember, isAdmin, addMember);

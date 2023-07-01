@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { protect, isMember } = require("../utils/auth");
+const { protect, isMember } = require("../middleware/auth");
 const {
     checkListOwnership,
     validateTeamTask,
@@ -10,7 +10,7 @@ const {
     validateListOwner,
     validateTaskAccess,
     validateTaskInfo,
-} = require("../utils/task");
+} = require("../middleware/task");
 const {
     createTask,
     createList,
