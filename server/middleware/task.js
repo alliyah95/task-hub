@@ -87,6 +87,45 @@ const validateAssigneeMembership = async (req, res, next) => {
     next();
 };
 
+// used when reassigning a task for editing
+const validateAssignee = async (req, res, next) => {
+    const { taskId, assignee } = req.body;
+
+    if (!assignee) {
+        return next();
+    }
+
+    const assigneeUser = await User.findById(assignee);
+    if (!assigneeUser) {
+        return res.status(404).json({ error: "Assignee not found" });
+    }
+
+    const task = await Task.findById(taskId);
+    if (!task) {
+        return res.status(404).json({ error: "Task not found" });
+    }
+
+    if (task.teamId) {
+        const team = await Team.findById(task.teamId).populate(
+            "members",
+            "-password"
+        );
+        const isAssigneeMember = team.members.find((member) =>
+            member._id.equals(assignee)
+        );
+
+        if (!isAssigneeMember) {
+            return res
+                .status(403)
+                .json({ error: "Assignee is not a member of this team" });
+        } else {
+            return next();
+        }
+    } else {
+        return res.status(400).json({ error: "You cannot reassign this task" });
+    }
+};
+
 // used when creating a team list
 // checks if provided team exists
 const validateTeamList = async (req, res, next) => {
@@ -219,30 +258,6 @@ const validateTaskAccess = async (req, res, next) => {
     }
 };
 
-// for checking the validity of new Task values for editing
-const validateTaskInfo = async (req, res, next) => {
-    const TASK_STATUS = ["todo", "ongoing", "finished"];
-    const { status, assignee, dueDate } = req.body;
-
-    if (status && !TASK_STATUS.includes(status)) {
-        res.status(400).json({ error: "Invalid task status" });
-    }
-
-    if (assignee) {
-        const assigneeExists = User.findById(assignee);
-        if (!assigneeExists) {
-            res.status(400).json({ error: "Invalid assignee" });
-        }
-    }
-
-    if (dueDate) {
-        if (!(dueDate instanceof Date && !isNaN(dueDate))) {
-            return res.status(400).json({ error: "Invalid due date format" });
-        }
-    }
-
-    next();
-};
 module.exports = {
     checkListOwnership,
     validateTeamTask,
@@ -251,5 +266,5 @@ module.exports = {
     validateTaskOwner,
     validateListOwner,
     validateTaskAccess,
-    validateTaskInfo,
+    validateAssignee,
 };

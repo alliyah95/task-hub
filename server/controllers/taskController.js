@@ -1,27 +1,26 @@
 const asyncHandler = require("express-async-handler");
 const Task = require("../models/Task");
 const List = require("../models/List");
+const {
+    validateTaskDescription,
+    validateTaskStatus,
+    validateTaskDueDate,
+} = require("../utils/task");
 
 const createTask = asyncHandler(async (req, res) => {
     const { description, status, dueDate, teamId, listId, assignee } = req.body;
     const { addToList } = req.query;
 
-    // done
-    if (!description) {
+    if (!validateTaskDescription(description)) {
         return res.status(404).json({ error: "Task description is empty" });
     }
 
-    // done
-    if (!TASK_STATUS.includes(status)) {
+    if (status && !validateTaskStatus(status)) {
         return res.status(400).json({ error: "Invalid task status" });
     }
 
-    // done
-    let formattedDate;
-    try {
-        formattedDate = new Date(dueDate);
-    } catch (err) {
-        return res.status(400).json({ error: "Invalid due date format" });
+    if (dueDate && !validateTaskDueDate(dueDate)) {
+        return res.status(400).json({ error: "Invalid due date" });
     }
 
     const taskData = {
@@ -29,8 +28,11 @@ const createTask = asyncHandler(async (req, res) => {
         status,
         assignee: req.user._id,
         assignedBy: req.user._id,
-        dueDate: formattedDate,
     };
+
+    if (dueDate) {
+        taskData.dueDate = new Date(dueDate);
+    }
 
     // assignee is already validated using validateAssigneeMembership middleware
     if (req.path === "/create-team-task") {
@@ -179,19 +181,31 @@ const editTask = asyncHandler(async (req, res) => {
     const task = await Task.findById(taskId);
 
     if (description) {
-        task.description = description;
+        if (validateTaskDescription(description)) {
+            task.description = description;
+        } else {
+            return res.status(404).json({ error: "Task description is empty" });
+        }
     }
 
     if (status) {
-        task.status = status;
-    }
-
-    if (assignee) {
-        task.status = assignee;
+        if (validateTaskStatus(status)) {
+            task.status = status;
+        } else {
+            return res.status(404).json({ error: "Invalid task status" });
+        }
     }
 
     if (dueDate) {
-        task.dueDate = new Date(dueDate);
+        if (validateTaskDueDate(dueDate)) {
+            task.dueDate = new Date(dueDate);
+        } else {
+            return res.status(404).json({ error: "Invalid due date" });
+        }
+    }
+
+    if (assignee) {
+        task.assignee = assignee;
     }
 
     const updatedTask = await task.save();

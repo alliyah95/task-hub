@@ -9,7 +9,7 @@ const {
     validateTaskOwner,
     validateListOwner,
     validateTaskAccess,
-    validateTaskInfo,
+    validateAssignee,
 } = require("../middleware/task");
 const {
     createTask,
@@ -49,7 +49,7 @@ router.put(
     "/edit-task",
     protect,
     validateTaskAccess,
-    validateTaskInfo,
+    validateAssignee,
     editTask
 );
 router.put("/edit-list-title", protect, editListTitle);
