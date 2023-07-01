@@ -3,6 +3,8 @@ const Team = require("../models/Team");
 const Task = require("../models/Task");
 const User = require("../models/User");
 
+// used for creating user tasks
+// does not validate teamId and assignee
 const checkListOwnership = async (req, res, next) => {
     const { listId } = req.body;
     const userId = req.user._id;
@@ -29,6 +31,9 @@ const checkListOwnership = async (req, res, next) => {
     }
 };
 
+// used for creating team tasks
+// checks if provided team exists and if provided list
+// is associated with such team
 const validateTeamTask = async (req, res, next) => {
     const { teamId, listId } = req.body;
 
@@ -53,6 +58,8 @@ const validateTeamTask = async (req, res, next) => {
     }
 };
 
+// used when creating and validating team tasks
+// checks whether provided assignee is a member of the team
 const validateAssigneeMembership = async (req, res, next) => {
     const { assignee, teamId } = req.body;
 
@@ -80,6 +87,8 @@ const validateAssigneeMembership = async (req, res, next) => {
     next();
 };
 
+// used when creating a team list
+// checks if provided team exists
 const validateTeamList = async (req, res, next) => {
     const { teamId } = req.body;
 
@@ -96,6 +105,9 @@ const validateTeamList = async (req, res, next) => {
     }
 };
 
+// used when deleting a task
+// does not allow a user to delete a task if they are not the owner
+// TODO: if team task, allow admin to delete task
 const validateTaskOwner = async (req, res, next) => {
     const { taskId } = req.body;
 
@@ -122,6 +134,11 @@ const validateTaskOwner = async (req, res, next) => {
     }
 };
 
+// used when deleting a list
+// only the creator of the list can delete
+// does not allow a user to delete if list has multiple owners, meaning
+// list contains tasks made by multiple members - basically a team list
+// TODO: if team list, allow admin to delete the list
 const validateListOwner = async (req, res, next) => {
     const { listId } = req.body;
 
@@ -146,7 +163,6 @@ const validateListOwner = async (req, res, next) => {
             (task) => !task.equals(req.user._id)
         );
 
-        console.log(hasMultipleOwners);
         if (hasMultipleOwners) {
             return res.status(401).json({
                 error: "Failed to modify. List has multiple owners",
@@ -159,6 +175,10 @@ const validateListOwner = async (req, res, next) => {
     }
 };
 
+// used when fetching a task
+// fetch only when:
+// 1. user task
+// 2. team task and user is member of team
 const validateTaskAccess = async (req, res, next) => {
     const { taskId } = req.body;
 
