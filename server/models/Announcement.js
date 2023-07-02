@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
-const { generateShortId } = require("../middleware/team");
+const { generateShortId } = require("../utils/team");
 
 const announcementSchema = new Schema(
     {
