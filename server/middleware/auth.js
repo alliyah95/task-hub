@@ -31,8 +31,11 @@ const isMember = asyncHandler(async (req, res, next) => {
     const { teamId } = req.body;
     const currentUser = req.user;
 
-    const team = await Team.findById(teamId).populate("members", "-password");
+    if (!teamId) {
+        return res.status(400).json({ error: "Team ID is empty" });
+    }
 
+    const team = await Team.findById(teamId).populate("members", "-password");
     if (!team) {
         return res.status(404).json({ error: "Team not found" });
     }
@@ -73,8 +76,16 @@ const isAdmin = asyncHandler(async (req, res, next) => {
     next();
 });
 
-const checkAnnouncementOwnership = async (req, res, next) => {
+const checkAnnouncementOwnership = asyncHandler(async (req, res, next) => {
     const { teamId, announcementId } = req.body;
+
+    if (!teamId) {
+        return res.status(400).json({ error: "Team ID is empty" });
+    }
+
+    if (!announcementId) {
+        return res.status(400).json({ error: "Announcement ID is empty" });
+    }
 
     const announcement = await Announcement.findOne({
         _id: announcementId,
@@ -88,7 +99,7 @@ const checkAnnouncementOwnership = async (req, res, next) => {
     }
 
     next();
-};
+});
 
 module.exports = {
     protect,

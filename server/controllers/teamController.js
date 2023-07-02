@@ -242,10 +242,6 @@ const createAnnouncement = asyncHandler(async (req, res) => {
         return res.status(400).json({ error: "Announcement cannot be empty" });
     }
 
-    if (!teamId) {
-        return res.status(400).json({ error: "Team ID cannot be empty" });
-    }
-
     try {
         const announcement = await Announcement.create({
             author: req.user._id,
@@ -256,6 +252,7 @@ const createAnnouncement = asyncHandler(async (req, res) => {
 
         res.status(200).json({ announcement });
     } catch (err) {
+        console.error(err);
         return res.status(500).json({ error: "Failed to create announcement" });
     }
 });
@@ -263,74 +260,61 @@ const createAnnouncement = asyncHandler(async (req, res) => {
 const fetchAnnouncement = asyncHandler(async (req, res) => {
     const { announcementId } = req.body;
 
-    if (!announcementId) {
-        return res.status(400).json({ error: "Announcement ID is empty" });
+    try {
+        const announcement = await Announcement.findById(
+            announcementId
+        ).populate("author", "-password");
+
+        if (!announcement) {
+            return res.status(404).json({ error: "Announcement not found" });
+        }
+        return res.status(200).json({ announcement });
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({ error: "Failed to fetch announcement" });
     }
-
-    const announcement = await Announcement.findById(announcementId).populate(
-        "author",
-        "-password"
-    );
-
-    if (!announcement) {
-        return res.status(404).json({ error: "Announcement not found" });
-    }
-
-    res.status(200).json({ announcement });
 });
 
 const fetchAllAnnouncements = asyncHandler(async (req, res) => {
     const { teamId } = req.body;
 
-    if (!teamId) {
-        return res.status(400).json({ error: "Team ID is empty" });
+    try {
+        const announcements = await Announcement.find({ teamId })
+            .populate("author", "-password -createdAt -updatedAt")
+            .sort({ createdAt: 1 });
+
+        return res.status(200).json({ announcements });
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({ error: "Failed to fetch announcements" });
     }
-
-    const announcements = await Announcement.find({ teamId })
-        .populate("author", "-password -createdAt -updatedAt")
-        .sort({ createdAt: 1 });
-
-    res.status(200).json({ announcements });
 });
 
 const editAnnouncement = asyncHandler(async (req, res) => {
     const { announcementId, title, content } = req.body;
 
-    if (!announcementId) {
-        return res.status(400).json({ error: "Announcement ID is empty" });
+    try {
+        const editedAnnouncement = await Announcement.findByIdAndUpdate(
+            announcementId,
+            { title, content },
+            { new: true }
+        ).populate("author", "-password -createdAt -updatedAt");
+
+        res.status(200).json({ announcement: editedAnnouncement });
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({ error: "Failed to edit announcement" });
     }
-
-    const editedAnnouncement = await Announcement.findByIdAndUpdate(
-        announcementId,
-        { title, content },
-        { new: true }
-    ).populate("author", "-password -createdAt -updatedAt");
-
-    if (!editAnnouncement) {
-        return res.status(404).json({ error: "Announcement not found" });
-    }
-
-    res.status(200).json({ announcement: editedAnnouncement });
 });
 
 const deleteAnnouncement = asyncHandler(async (req, res) => {
     const { announcementId } = req.body;
 
-    if (!announcementId) {
-        return res.status(400).json({ error: "Announcement ID is empty" });
-    }
-
     try {
-        const deletedAnnouncement = await Announcement.findByIdAndDelete(
-            announcementId
-        );
-
-        if (!deletedAnnouncement) {
-            return res.status(404).json({ error: "Announcement not found" });
-        }
-
+        await Announcement.findByIdAndDelete(announcementId);
         res.status(200).json({ message: "Announcement successfully deleted" });
     } catch (error) {
+        console.error(err);
         return res.status(500).json({ error: "Failed to delete announcement" });
     }
 });
