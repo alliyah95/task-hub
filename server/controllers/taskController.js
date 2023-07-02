@@ -177,7 +177,6 @@ const fetchTeamLists = asyncHandler(async (req, res) => {
 
 const editTask = asyncHandler(async (req, res) => {
     const { taskId, description, status, assignee, dueDate } = req.body;
-
     const task = await Task.findById(taskId);
 
     if (description) {
@@ -196,11 +195,14 @@ const editTask = asyncHandler(async (req, res) => {
         }
     }
 
-    if (dueDate) {
-        if (validateTaskDueDate(dueDate)) {
-            task.dueDate = new Date(dueDate);
+    if (dueDate !== undefined) {
+        if (dueDate === "") {
+            task.dueDate = undefined;
         } else {
-            return res.status(404).json({ error: "Invalid due date" });
+            if (!validateTaskDueDate(dueDate)) {
+                return res.status(404).json({ error: "Invalid due date" });
+            }
+            task.dueDate = new Date(dueDate);
         }
     }
 
