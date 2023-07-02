@@ -52,5 +52,5 @@ router.put(
     validateAssignee,
     editTask
 );
-router.put("/edit-list-title", protect, editListTitle);
+router.put("/edit-list-title", protect, validateListOwner, editListTitle);
 module.exports = router;

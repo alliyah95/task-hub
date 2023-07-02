@@ -10,8 +10,7 @@ const checkListOwnership = async (req, res, next) => {
     const userId = req.user._id;
 
     if (!listId) {
-        next();
-        return;
+        return next();
     }
 
     try {

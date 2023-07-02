@@ -11,51 +11,52 @@ const createTask = asyncHandler(async (req, res) => {
     const { description, status, dueDate, teamId, listId, assignee } = req.body;
     const { addToList } = req.query;
 
-    if (!validateTaskDescription(description)) {
-        return res.status(404).json({ error: "Task description is empty" });
-    }
-
-    if (status && !validateTaskStatus(status)) {
-        return res.status(400).json({ error: "Invalid task status" });
-    }
-
-    if (dueDate && !validateTaskDueDate(dueDate)) {
-        return res.status(400).json({ error: "Invalid due date" });
-    }
-
-    const taskData = {
-        description,
-        status,
-        assignee: req.user._id,
-        assignedBy: req.user._id,
-    };
-
-    if (dueDate) {
-        taskData.dueDate = new Date(dueDate);
-    }
-
-    // assignee is already validated using validateAssigneeMembership middleware
-    if (req.path === "/create-team-task") {
-        taskData.teamId = teamId;
-        taskData.assignee = assignee || req.user._id;
-    }
-
-    const task = await Task.create(taskData);
-
-    if (addToList) {
-        const list = await List.findById(listId);
-
-        if (!list) {
-            return res.status(404).json({ error: "List not found" });
+    try {
+        if (!validateTaskDescription(description)) {
+            return res.status(404).json({ error: "Task description is empty" });
         }
 
-        list.tasks.push(task._id);
-        task.listId = listId;
+        if (status && !validateTaskStatus(status)) {
+            return res.status(400).json({ error: "Invalid task status" });
+        }
 
-        await task.save();
-        await list.save();
+        if (dueDate && !validateTaskDueDate(dueDate)) {
+            return res.status(400).json({ error: "Invalid due date" });
+        }
+
+        const taskData = {
+            description,
+            status,
+            assignee: req.user._id,
+            assignedBy: req.user._id,
+        };
+
+        if (dueDate) {
+            taskData.dueDate = new Date(dueDate);
+        }
+
+        // assignee is already validated using validateAssigneeMembership middleware
+        if (req.path === "/create-team-task") {
+            taskData.teamId = teamId;
+            taskData.assignee = assignee || req.user._id;
+        }
+
+        const task = await Task.create(taskData);
+
+        if (addToList) {
+            const list = await List.findById(listId);
+
+            list.tasks.push(task._id);
+            task.listId = listId;
+
+            await task.save();
+            await list.save();
+        }
+        return res.status(200).json({ task });
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({ error: "Failed to create task" });
     }
-    return res.status(200).json({ task });
 });
 
 const createList = asyncHandler(async (req, res) => {
@@ -65,165 +66,187 @@ const createList = asyncHandler(async (req, res) => {
         return res.status(404).json({ error: "List title is empty" });
     }
 
-    const listData = {
-        title,
-        createdBy: req.user._id,
-    };
+    try {
+        const listData = {
+            title,
+            createdBy: req.user._id,
+        };
 
-    if (req.path === "/create-team-list") {
-        listData.teamId = teamId;
+        if (req.path === "/create-team-list") {
+            listData.teamId = teamId;
+        }
+
+        const list = await List.create(listData);
+        return res.status(200).json({ list });
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({ error: "Failed to create list" });
     }
-
-    const list = await List.create(listData);
-    return res.status(200).json({ list });
 });
 
 const deleteTask = asyncHandler(async (req, res) => {
     const { taskId } = req.body;
 
-    if (!taskId) {
-        return res.status(400).json({ error: "Task ID is empty" });
-    }
+    try {
+        const task = await Task.findById(taskId);
+        if (task.listId) {
+            const list = await List.findById(task.listId);
+            if (!list) {
+                return res.status(404).json({ error: "List not found" });
+            }
 
-    const task = await Task.findById(taskId);
-    if (!task) {
-        return res.status(404).json({ error: "Task not found" });
-    }
-
-    if (task.listId) {
-        const list = await List.findById(task.listId);
-        if (!list) {
-            return res.status(404).json({ error: "List not found" });
+            await List.findByIdAndUpdate(task.listId, {
+                $pull: { tasks: taskId },
+            });
         }
 
-        await List.findByIdAndUpdate(task.listId, {
-            $pull: { tasks: taskId },
-        });
+        await Task.findByIdAndDelete(taskId);
+        return res.status(200).json({ message: "Task successfully deleted" });
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({ error: "Failed to delete task" });
     }
-
-    await Task.findByIdAndDelete(taskId);
-    res.status(200).json({ message: "Task successfully deleted" });
 });
 
 const deleteList = asyncHandler(async (req, res) => {
     const { listId } = req.body;
 
-    if (!listId) {
-        return res.status(400).json({ error: "List ID is not provided" });
-    }
-
     try {
         const list = await List.findById(listId).populate("tasks");
-
-        if (!list) {
-            return res.status(404).json({ error: "List not found" });
-        }
 
         for (let task of list.tasks) {
             await Task.findByIdAndDelete(task);
         }
 
-        const deletedList = await List.findByIdAndDelete(listId);
-        if (!deletedList) {
-            return res.status(500).json({ error: "Failed to delete list" });
-        }
-
-        res.status(200).json({ message: "List successfully deleted" });
-    } catch (err) {}
+        await List.findByIdAndDelete(listId);
+        return res.status(200).json({ message: "List successfully deleted" });
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({ error: " Failed to delete list" });
+    }
 });
 
 const fetchTask = asyncHandler(async (req, res) => {
     const { taskId } = req.body;
-    const task = await Task.findById(taskId);
-    res.status(200).json({ task });
+
+    try {
+        const task = await Task.findById(taskId);
+        return res.status(200).json({ task });
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({ error: "Failed to fetch task" });
+    }
 });
 
 const fetchUserLists = asyncHandler(async (req, res) => {
     const ungroupedTasks = { title: "Tasks", tasks: [] };
 
-    const tasks = await Task.find({
-        assignedBy: req.user._id,
-        assignee: req.user._id,
-        teamId: { $exists: false },
-        listId: { $exists: false },
-    });
+    try {
+        const tasks = await Task.find({
+            assignedBy: req.user._id,
+            assignee: req.user._id,
+            teamId: { $exists: false },
+            listId: { $exists: false },
+        });
 
-    ungroupedTasks.tasks = tasks;
+        ungroupedTasks.tasks = tasks;
 
-    const lists = await List.find({
-        teamId: { $exists: false },
-        createdBy: req.user._id,
-    }).populate("tasks", "-teamId");
+        const lists = await List.find({
+            teamId: { $exists: false },
+            createdBy: req.user._id,
+        }).populate("tasks", "-teamId");
 
-    res.status(200).json({ lists: [ungroupedTasks, ...lists] });
+        res.status(200).json({ lists: [ungroupedTasks, ...lists] });
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({ error: "Failed to fetch lists" });
+    }
 });
 
 const fetchTeamLists = asyncHandler(async (req, res) => {
     const { teamId } = req.body;
-
-    if (!teamId) {
-        res.status(400).json({ error: "Team ID is required" });
-    }
     const ungroupedTeamTasks = { title: "Tasks", tasks: [] };
-    const teamTasks = await Task.find({
-        teamId: teamId,
-        listId: { $exists: false },
-    });
-    ungroupedTeamTasks.tasks = teamTasks;
 
-    const teamLists = await List.find({ teamId: teamId }).populate("tasks");
-    res.status(200).json({ lists: [ungroupedTeamTasks, ...teamLists] });
+    try {
+        const teamTasks = await Task.find({
+            teamId: teamId,
+            listId: { $exists: false },
+        });
+        ungroupedTeamTasks.tasks = teamTasks;
+
+        const teamLists = await List.find({ teamId: teamId }).populate("tasks");
+        return res
+            .status(200)
+            .json({ lists: [ungroupedTeamTasks, ...teamLists] });
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({ error: "Failed to fetch lists" });
+    }
 });
 
 const editTask = asyncHandler(async (req, res) => {
     const { taskId, description, status, assignee, dueDate } = req.body;
-    const task = await Task.findById(taskId);
 
-    if (description) {
-        if (validateTaskDescription(description)) {
-            task.description = description;
-        } else {
-            return res.status(404).json({ error: "Task description is empty" });
-        }
-    }
+    try {
+        const task = await Task.findById(taskId);
 
-    if (status) {
-        if (validateTaskStatus(status)) {
-            task.status = status;
-        } else {
-            return res.status(404).json({ error: "Invalid task status" });
-        }
-    }
-
-    if (dueDate !== undefined) {
-        if (dueDate === "") {
-            task.dueDate = undefined;
-        } else {
-            if (!validateTaskDueDate(dueDate)) {
-                return res.status(404).json({ error: "Invalid due date" });
+        if (description) {
+            if (validateTaskDescription(description)) {
+                task.description = description;
+            } else {
+                return res
+                    .status(404)
+                    .json({ error: "Task description is empty" });
             }
-            task.dueDate = new Date(dueDate);
         }
-    }
 
-    if (assignee) {
-        task.assignee = assignee;
-    }
+        if (status) {
+            if (validateTaskStatus(status)) {
+                task.status = status;
+            } else {
+                return res.status(404).json({ error: "Invalid task status" });
+            }
+        }
 
-    const updatedTask = await task.save();
-    res.status(200).json({ task: updatedTask });
+        if (dueDate !== undefined) {
+            if (dueDate === "") {
+                task.dueDate = undefined;
+            } else {
+                if (!validateTaskDueDate(dueDate)) {
+                    return res.status(404).json({ error: "Invalid due date" });
+                }
+                task.dueDate = new Date(dueDate);
+            }
+        }
+
+        if (assignee) {
+            task.assignee = assignee;
+        }
+
+        const updatedTask = await task.save();
+        return res.status(200).json({ task: updatedTask });
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({ error: "Failed to edit task" });
+    }
 });
 
 const editListTitle = asyncHandler(async (req, res) => {
     const { listId, title } = req.body;
-    const list = await List.findById(listId).populate("tasks");
 
-    if (title) {
-        list.title = title;
+    try {
+        const list = await List.findById(listId).populate("tasks");
+
+        if (title) {
+            list.title = title;
+        }
+
+        const updatedList = await list.save();
+        res.status(200).json({ list: updatedList });
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({ error: "Failed to edit list title" });
     }
-
-    const updatedList = await list.save();
-    res.status(200).json({ list: updatedList });
 });
 
 module.exports = {
