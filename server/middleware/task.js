@@ -145,8 +145,7 @@ const validateTeamList = async (req, res, next) => {
 };
 
 // used when deleting a task
-// does not allow a user to delete a task if they are not the owner
-// TODO: if team task, allow admin to delete task
+// does not allow a user to delete a task if they are not the owner or team admin
 const validateTaskOwner = async (req, res, next) => {
     const { taskId } = req.body;
 
@@ -159,6 +158,18 @@ const validateTaskOwner = async (req, res, next) => {
 
         if (!task) {
             return res.status(404).json({ error: "Task not found" });
+        }
+
+        if (task.teamId) {
+            const team = await Team.findById(task.teamId);
+
+            if (!team) {
+                return res.status(404).json({ error: "Task's team not found" });
+            }
+
+            if (team.admin.equals(req.user._id)) {
+                return next();
+            }
         }
 
         if (!task.assignedBy.equals(req.user._id)) {
@@ -177,7 +188,6 @@ const validateTaskOwner = async (req, res, next) => {
 // only the creator of the list can delete
 // does not allow a user to delete if list has multiple owners, meaning
 // list contains tasks made by multiple members - basically a team list
-// TODO: if team list, allow admin to delete the list
 const validateListOwner = async (req, res, next) => {
     const { listId } = req.body;
 
@@ -190,6 +200,18 @@ const validateListOwner = async (req, res, next) => {
 
         if (!list) {
             return res.status(404).json({ error: "List not found" });
+        }
+
+        if (list.teamId) {
+            const team = await Team.findById(list.teamId);
+
+            if (!team) {
+                return res.status(404).json({ error: "List's team not found" });
+            }
+
+            if (team.admin.equals(req.user._id)) {
+                return next();
+            }
         }
 
         if (!list.createdBy.equals(req.user._id)) {
