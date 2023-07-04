@@ -3,6 +3,7 @@ const asyncHandler = require("express-async-handler");
 const User = require("../models/User");
 const Team = require("../models/Team");
 const Announcement = require("../models/Announcement");
+const Chat = require("../models/Chat");
 
 const protect = asyncHandler(async (req, res, next) => {
     let token;
@@ -76,6 +77,35 @@ const isAdmin = asyncHandler(async (req, res, next) => {
     next();
 });
 
+const isGroupChatMember = asyncHandler(async (req, res, next) => {
+    const { groupChatId } = req.body;
+
+    if (!groupChatId) {
+        return res.status(400).json({ error: "Group chat ID is empty" });
+    }
+
+    const groupChat = await Chat.findById(groupChatId);
+    if (!groupChat) {
+        return res.status(400).json({ error: "Group chat not found" });
+    }
+
+    const team = await Team.findById(groupChat.team).populate(
+        "members",
+        "-password"
+    );
+
+    const isMember = team.members.find((member) =>
+        member._id.equals(req.user._id)
+    );
+
+    if (!isMember) {
+        return res
+            .status(403)
+            .json({ error: "You are not a member of this team" });
+    }
+
+    next();
+});
 const checkAnnouncementOwnership = asyncHandler(async (req, res, next) => {
     const { teamId, announcementId } = req.body;
 
@@ -104,6 +134,7 @@ const checkAnnouncementOwnership = asyncHandler(async (req, res, next) => {
 module.exports = {
     protect,
     isMember,
+    isGroupChatMember,
     isAdmin,
     checkAnnouncementOwnership,
 };

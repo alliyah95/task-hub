@@ -19,10 +19,12 @@ connection.once("open", () => {
 const userRoutes = require("./api/user");
 const teamRoutes = require("./api/team");
 const taskRoutes = require("./api/task");
+const chatRoutes = require("./api/chat");
 
 app.use("/api/user", userRoutes);
 app.use("/api/team", teamRoutes);
 app.use("/api/task", taskRoutes);
+app.use("/api/chat", chatRoutes);
 
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}.`);

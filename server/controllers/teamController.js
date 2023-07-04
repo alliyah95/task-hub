@@ -2,6 +2,7 @@ const asyncHandler = require("express-async-handler");
 const Team = require("../models/Team");
 const User = require("../models/User");
 const Announcement = require("../models/Announcement");
+const Chat = require("../models/Chat");
 
 const createTeam = asyncHandler(async (req, res) => {
     const { name, members } = req.body;
@@ -18,6 +19,12 @@ const createTeam = asyncHandler(async (req, res) => {
             name,
             members: parsedMembers,
             admin: req.user,
+        });
+
+        // create group chat
+        await Chat.create({
+            team: team.id,
+            members: team.members,
         });
 
         const newTeam = await Team.findById(team.id)
